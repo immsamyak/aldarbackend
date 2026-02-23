@@ -34,19 +34,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxml2-dev \
     libzip-dev \
     libicu-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install -j$(nproc) \
-        pdo_mysql \
-        mbstring \
-        xml \
-        zip \
-        gd \
-        intl \
-        bcmath \
-        opcache \
-        pcntl \
-    && pecl install redis && docker-php-ext-enable redis \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions (use -j1 to avoid OOM on small instances)
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
+    && docker-php-ext-install -j1 pdo_mysql mbstring xml zip gd opcache pcntl bcmath
+
+# intl is compiled separately — it's the heaviest extension (C++/ICU)
+RUN docker-php-ext-install -j1 intl
+
+# Redis via PECL
+RUN pecl install redis && docker-php-ext-enable redis
 
 # PHP production config
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
