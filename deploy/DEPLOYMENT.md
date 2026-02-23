@@ -104,11 +104,25 @@ cd /var/www/aldar-api
 bash deploy/deploy.sh
 ```
 
-### 8. Seed the database (first time only)
+### 8. Import the database (first time only)
+
+The repo includes a full database dump with all seeded data (brand settings, admin user, countries, etc.):
 
 ```bash
-php artisan db:seed --class=AldarSeeder
+bash deploy/restore-db.sh
 ```
+
+This drops all tables, imports the dump, and runs any pending migrations.
+
+**Admin login after restore:**
+- Email: `admin@aldargroup.com`
+- Password: `Admin@12345`
+
+> Alternatively, if you want a fresh database without seeded data:
+> ```bash
+> php artisan migrate --force
+> php artisan db:seed --class=AldarSeeder
+> ```
 
 ### 9. Setup SSL certificate
 
