@@ -136,12 +136,20 @@ if [ -f "${SCRIPT_DIR}/nginx.conf" ]; then
     echo "  → Nginx configured for ${DOMAIN}"
 fi
 
+# ─── Create required directory structure ─────────────────────────────────────
+mkdir -p "${APP_DIR}/storage/logs"
+mkdir -p "${APP_DIR}/storage/app/public"
+mkdir -p "${APP_DIR}/storage/framework/{cache,sessions,views}"
+mkdir -p "${APP_DIR}/bootstrap/cache"
+chown -R "${APP_USER}:www-data" "$APP_DIR"
+chmod -R 775 "$APP_DIR"
+
 # ─── Setup Supervisor for queue worker ───────────────────────────────────────
 cat > /etc/supervisor/conf.d/aldar-worker.conf <<EOF
 [program:aldar-worker]
 process_name=%(program_name)s_%(process_num)02d
 command=php ${APP_DIR}/artisan queue:work database --sleep=3 --tries=3 --max-time=3600
-autostart=true
+autostart=false
 autorestart=true
 stopasgroup=true
 killasgroup=true
