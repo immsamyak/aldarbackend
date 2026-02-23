@@ -11,13 +11,19 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 # Wait for MySQL to be ready
 echo "[1/5] Waiting for database..."
+DB_HOST=${DB_HOST:-mysql}
+DB_PORT=${DB_PORT:-3306}
 max_tries=30
 count=0
-until php artisan db:monitor --databases=mysql 2>/dev/null || [ $count -ge $max_tries ]; do
+until php -r "@fsockopen('$DB_HOST', $DB_PORT, \$e, \$m, 2) || exit(1);" 2>/dev/null || [ $count -ge $max_tries ]; do
     sleep 2
     count=$((count + 1))
-    echo "  Waiting for MySQL... ($count/$max_tries)"
+    echo "  Waiting for MySQL at $DB_HOST:$DB_PORT... ($count/$max_tries)"
 done
+
+if [ $count -ge $max_tries ]; then
+    echo "  ⚠️  MySQL not reachable after $max_tries attempts, continuing anyway..."
+fi
 
 # Run migrations
 echo "[2/5] Running migrations..."
