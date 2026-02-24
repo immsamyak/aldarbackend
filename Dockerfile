@@ -36,23 +36,13 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
 # Redis via PECL
 RUN pecl install redis && docker-php-ext-enable redis
 
+# Install Composer directly (no separate composer:2 image pull needed)
+COPY --from=composer/composer:2-bin /composer /usr/bin/composer
+
 # PHP production config
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
-# ── Stage 2: Install Composer dependencies ──────────────────────────────────
-FROM composer:2 AS vendor
-
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN --mount=type=cache,target=/root/.composer/cache \
-    composer install \
-    --no-dev \
-    --no-interaction \
-    --prefer-dist \
-    --optimize-autoloader \
-    --no-scripts
-
-# ── Stage 3: Production image ───────────────────────────────────────────────
+# ── Stage 2: Production image ───────────────────────────────────────────────
 FROM base AS production
 
 # Copy config files (only rebuilds if docker/ config changes)
@@ -64,11 +54,18 @@ COPY docker/supervisord.conf /etc/supervisor/conf.d/app.conf
 # App setup
 WORKDIR /var/www/html
 
+# Copy composer files first for better caching
+COPY --chown=www-data:www-data composer.json composer.lock ./
+RUN --mount=type=cache,target=/root/.composer/cache \
+    composer install \
+    --no-dev \
+    --no-interaction \
+    --prefer-dist \
+    --optimize-autoloader \
+    --no-scripts
+
 # Copy application code (this layer changes on every deploy — that's fine)
 COPY --chown=www-data:www-data . .
-
-# Copy vendor from build stage
-COPY --from=vendor --chown=www-data:www-data /app/vendor ./vendor
 
 # Create required directories
 RUN mkdir -p storage/logs \
