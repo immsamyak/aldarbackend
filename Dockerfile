@@ -1,26 +1,19 @@
+# syntax=docker/dockerfile:1
 ###############################################################################
 # ALDAR API — Production Dockerfile
-# Multi-stage: Composer build → PHP 8.3-FPM + Nginx (single container)
-# Works with Coolify, Docker Compose, or any container platform.
+# Multi-stage: Composer build → PHP 8.4-FPM + Nginx (single container)
+# Optimized for layer caching — system deps & PHP extensions only rebuild
+# when this Dockerfile changes, NOT when app code changes.
 ###############################################################################
 
-# ── Stage 1: Install Composer dependencies ──────────────────────────────────
-FROM composer:2 AS vendor
+# ── Stage 1: Base image with system deps + PHP extensions ───────────────────
+# This layer is ~600 MB but only rebuilds when you change extensions/system pkgs.
+FROM php:8.4-fpm-bookworm AS base
 
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install \
-    --no-dev \
-    --no-interaction \
-    --prefer-dist \
-    --optimize-autoloader \
-    --no-scripts
-
-# ── Stage 2: Production image ───────────────────────────────────────────────
-FROM php:8.4-fpm-bookworm
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install system dependencies (cached unless this block changes)
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && apt-get install -y --no-install-recommends \
     nginx \
     supervisor \
     curl \
@@ -33,34 +26,45 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
-    libicu-dev \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    libicu-dev
 
-# Install PHP extensions (use -j1 to avoid OOM on small instances)
+# Install PHP extensions (cached unless this block changes)
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install -j1 pdo_mysql mbstring xml zip gd opcache pcntl bcmath
-
-# intl is compiled separately — it's the heaviest extension (C++/ICU)
-RUN docker-php-ext-install -j1 intl
+    && docker-php-ext-install -j$(nproc) pdo_mysql mbstring xml zip gd opcache pcntl bcmath \
+    && docker-php-ext-install -j$(nproc) intl
 
 # Redis via PECL
 RUN pecl install redis && docker-php-ext-enable redis
 
 # PHP production config
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+# ── Stage 2: Install Composer dependencies ──────────────────────────────────
+FROM composer:2 AS vendor
+
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN --mount=type=cache,target=/root/.composer/cache \
+    composer install \
+    --no-dev \
+    --no-interaction \
+    --prefer-dist \
+    --optimize-autoloader \
+    --no-scripts
+
+# ── Stage 3: Production image ───────────────────────────────────────────────
+FROM base AS production
+
+# Copy config files (only rebuilds if docker/ config changes)
 COPY docker/php.ini /usr/local/etc/php/conf.d/99-app.ini
 COPY docker/www.conf /usr/local/etc/php-fpm.d/www.conf
-
-# Nginx config
 COPY docker/nginx.conf /etc/nginx/sites-available/default
-
-# Supervisor config (manages nginx + php-fpm + queue worker)
 COPY docker/supervisord.conf /etc/supervisor/conf.d/app.conf
 
 # App setup
 WORKDIR /var/www/html
 
-# Copy application code
+# Copy application code (this layer changes on every deploy — that's fine)
 COPY --chown=www-data:www-data . .
 
 # Copy vendor from build stage
