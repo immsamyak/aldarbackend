@@ -33,3 +33,4 @@ storage/framework/sessions/*
 storage/framework/views/*
 
 update_recruitment.sql
+# Cache-optimized deploy 1771941910
