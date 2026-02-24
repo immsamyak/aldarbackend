@@ -80,9 +80,18 @@ class NoticeController extends CrudController
         } else {
             $data['schedule_date'] = null;
             $data['target_pages'] = null;
-            $data['image_url'] = null;
-            $data['pdf_url'] = null;
+            $data['image_url'] = $data['image_url'] ?? '';
+            $data['pdf_url'] = $data['pdf_url'] ?? '';
         }
+
+        // Ensure NOT NULL string columns never receive null
+        // (ConvertEmptyStringsToNull middleware can turn "" → null)
+        foreach (['attachment_url', 'image_url', 'pdf_url'] as $field) {
+            if (array_key_exists($field, $data) && $data[$field] === null) {
+                $data[$field] = '';
+            }
+        }
+
         return $data;
     }
 }

@@ -186,6 +186,7 @@ Route::get('/menus/{id}', [MenuController::class, 'getById']);
 Route::post('/menus', [MenuController::class, 'create'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 Route::put('/menus/{id}', [MenuController::class, 'update'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 Route::delete('/menus/{id}', [MenuController::class, 'remove'])->middleware(['jwt.auth', 'role:super_admin,admin']);
+Route::post('/menus/reorder', [MenuController::class, 'reorder'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 
 // ── Services (Express: /public and / both use same handler with ?all=true) ──
 Route::get('/services/public', [SiteServiceController::class, 'listPublicOrAll']);
@@ -194,6 +195,7 @@ Route::get('/services/{id}', [SiteServiceController::class, 'getById']);
 Route::post('/services', [SiteServiceController::class, 'create'])->middleware(['jwt.auth', 'role:super_admin,admin,staff']);
 Route::put('/services/{id}', [SiteServiceController::class, 'update'])->middleware(['jwt.auth', 'role:super_admin,admin,staff']);
 Route::delete('/services/{id}', [SiteServiceController::class, 'remove'])->middleware(['jwt.auth', 'role:super_admin,admin']);
+Route::post('/services/reorder', [SiteServiceController::class, 'reorder'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 
 // ── Jobs ──
 Route::get('/jobs/public', [JobController::class, 'listPublic']);
@@ -211,6 +213,7 @@ Route::get('/job-categories/{id}', [JobCategoryController::class, 'getById']);
 Route::post('/job-categories', [JobCategoryController::class, 'create'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 Route::put('/job-categories/{id}', [JobCategoryController::class, 'update'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 Route::delete('/job-categories/{id}', [JobCategoryController::class, 'remove'])->middleware(['jwt.auth', 'role:super_admin,admin']);
+Route::post('/job-categories/reorder', [JobCategoryController::class, 'reorder'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 
 // ── Applications ──
 Route::get('/applications', [ApplicationController::class, 'list']);
@@ -244,6 +247,7 @@ Route::get('/gallery/{id}', [GalleryController::class, 'getById']);
 Route::post('/gallery', [GalleryController::class, 'create'])->middleware(['jwt.auth', 'role:super_admin,admin,staff']);
 Route::put('/gallery/{id}', [GalleryController::class, 'update'])->middleware(['jwt.auth', 'role:super_admin,admin,staff']);
 Route::delete('/gallery/{id}', [GalleryController::class, 'remove'])->middleware(['jwt.auth', 'role:super_admin,admin']);
+Route::post('/gallery/reorder', [GalleryController::class, 'reorder'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 
 // ── Success Stories (Express: /public and / both use same handler with ?all=true) ──
 Route::get('/success-stories/public', [SuccessStoryController::class, 'listPublicOrAll']);
@@ -252,6 +256,7 @@ Route::get('/success-stories/{id}', [SuccessStoryController::class, 'getById']);
 Route::post('/success-stories', [SuccessStoryController::class, 'create'])->middleware(['jwt.auth', 'role:super_admin,admin,staff']);
 Route::put('/success-stories/{id}', [SuccessStoryController::class, 'update'])->middleware(['jwt.auth', 'role:super_admin,admin,staff']);
 Route::delete('/success-stories/{id}', [SuccessStoryController::class, 'remove'])->middleware(['jwt.auth', 'role:super_admin,admin']);
+Route::post('/success-stories/reorder', [SuccessStoryController::class, 'reorder'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 
 // ── Testimonials (Express: /public and / both use same handler with ?all=true) ──
 Route::get('/testimonials/public', [TestimonialController::class, 'listPublicOrAll']);
@@ -260,6 +265,7 @@ Route::get('/testimonials/{id}', [TestimonialController::class, 'getById']);
 Route::post('/testimonials', [TestimonialController::class, 'create'])->middleware(['jwt.auth', 'role:super_admin,admin,staff']);
 Route::put('/testimonials/{id}', [TestimonialController::class, 'update'])->middleware(['jwt.auth', 'role:super_admin,admin,staff']);
 Route::delete('/testimonials/{id}', [TestimonialController::class, 'remove'])->middleware(['jwt.auth', 'role:super_admin,admin']);
+Route::post('/testimonials/reorder', [TestimonialController::class, 'reorder'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 
 // ── Notices ──
 Route::get('/notices/public', [NoticeController::class, 'listPublished']);
@@ -359,9 +365,11 @@ Route::get('/organization-structure/{id}', [OrganizationStructureController::cla
 Route::post('/organization-structure', [OrganizationStructureController::class, 'create'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 Route::put('/organization-structure/{id}', [OrganizationStructureController::class, 'update'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 Route::delete('/organization-structure/{id}', [OrganizationStructureController::class, 'remove'])->middleware(['jwt.auth', 'role:super_admin,admin']);
+Route::post('/organization-structure/reorder', [OrganizationStructureController::class, 'reorder'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 
 // ── Recruitment Process ──
 Route::get('/recruitment-process/public', [RecruitmentProcessController::class, 'listPublic']);
+Route::post('/recruitment-process/reorder', [RecruitmentProcessController::class, 'reorder'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 Route::get('/recruitment-process', [RecruitmentProcessController::class, 'list']);
 Route::get('/recruitment-process/{id}', [RecruitmentProcessController::class, 'getById']);
 Route::post('/recruitment-process', [RecruitmentProcessController::class, 'create'])->middleware(['jwt.auth', 'role:super_admin,admin']);
@@ -375,6 +383,7 @@ Route::get('/categories/{id}', [CategoryController::class, 'getById']);
 Route::post('/categories', [CategoryController::class, 'create'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 Route::put('/categories/{id}', [CategoryController::class, 'update'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 Route::delete('/categories/{id}', [CategoryController::class, 'remove'])->middleware(['jwt.auth', 'role:super_admin,admin']);
+Route::post('/categories/reorder', [CategoryController::class, 'reorder'])->middleware(['jwt.auth', 'role:super_admin,admin']);
 
 // ── Legal Documents ──
 Route::get('/legal-documents/public', [LegalDocumentController::class, 'listPublic']);

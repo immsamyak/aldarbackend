@@ -147,6 +147,31 @@ abstract class CrudController extends Controller
         return response()->json($formatted);
     }
 
+    /**
+     * Generic reorder: accepts { items: [{ _id, order }], orderField: 'displayOrder' }
+     * Converts the camelCase orderField to snake_case for the DB column.
+     */
+    public function reorder(Request $request): JsonResponse
+    {
+        $items = $request->input('items', []);
+        $orderField = $request->input('orderField', 'display_order');
+
+        // Convert camelCase to snake_case for DB column
+        $column = self::camelToSnake($orderField);
+
+        $modelClass = $this->model();
+
+        foreach ($items as $item) {
+            $id = $item['_id'] ?? $item['id'] ?? null;
+            $order = $item['order'] ?? null;
+            if ($id !== null && $order !== null) {
+                $modelClass::where('id', $id)->update([$column => $order]);
+            }
+        }
+
+        return response()->json(['message' => 'Reorder successful']);
+    }
+
     protected function searchableFields(): array
     {
         return [];
