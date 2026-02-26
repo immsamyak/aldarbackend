@@ -8,17 +8,37 @@ namespace App\Helpers;
  */
 class PublicMapper
 {
+    private static function shouldForceHttps(): bool
+    {
+        $forceHttps = filter_var(env('FORCE_HTTPS', false), FILTER_VALIDATE_BOOL);
+        return $forceHttps || app()->environment('production');
+    }
+
     public static function resolveUrl(?string $path): string
     {
         if (!$path) return '';
+
+        $forceHttps = self::shouldForceHttps();
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-            return $path;
+            return $forceHttps ? preg_replace('/^http:\/\//i', 'https://', $path) : $path;
         }
-        if (str_starts_with($path, '/uploads')) {
-            $port = config('app.port', 4000);
-            return "http://localhost:{$port}{$path}";
+
+        $normalizedPath = str_starts_with($path, '/') ? $path : '/' . ltrim($path, '/');
+        $baseUrl = rtrim((string) config('app.url', ''), '/');
+
+        if ($baseUrl === '' && app()->bound('request')) {
+            $baseUrl = rtrim((string) request()->getSchemeAndHttpHost(), '/');
         }
-        return $path;
+
+        if ($baseUrl === '') {
+            return $normalizedPath;
+        }
+
+        if ($forceHttps) {
+            $baseUrl = preg_replace('/^http:\/\//i', 'https://', $baseUrl);
+        }
+
+        return $baseUrl . $normalizedPath;
     }
 
     public static function mapBrand($b): array
@@ -94,7 +114,7 @@ class PublicMapper
             'subheadline_en' => $h->subheadline_en ?? '',
             'subheadline_ne' => $h->subheadline_ne ?? '',
             'background_type' => $h->background_type ?? 'image',
-            'background_url' => $h->background_url ?? '',
+            'background_url' => self::resolveUrl($h->background_url ?? ''),
             'cta_primary_label_en' => $h->cta_primary_label_en ?? '',
             'cta_primary_label_ne' => $h->cta_primary_label_ne ?? '',
             'cta_primary_link' => $h->cta_primary_link ?? '',
@@ -170,7 +190,7 @@ class PublicMapper
             '_id' => (string) $c->id,
             'slug' => $c->slug,
             'code' => $c->code ?? '',
-            'flagUrl' => $c->flag_url ?? '',
+            'flagUrl' => self::resolveUrl($c->flag_url ?? ''),
             'name_en' => $c->name_en,
             'name_ne' => $c->name_ne,
             'visaInfo_en' => $c->visa_info_en,
@@ -189,7 +209,7 @@ class PublicMapper
     {
         return [
             '_id' => (string) $s->id,
-            'logoUrl' => $s->logo_url ?? '',
+            'logoUrl' => self::resolveUrl($s->logo_url ?? ''),
             'name' => $s->name ?? '',
             'industry' => $s->industry ?? '',
             'description_en' => $s->description_en ?? '',
@@ -208,7 +228,7 @@ class PublicMapper
             'title_ne' => $g->title_ne,
             'caption_en' => $g->caption_en,
             'caption_ne' => $g->caption_ne,
-            'mediaUrl' => $g->media_url,
+            'mediaUrl' => self::resolveUrl($g->media_url),
             'mediaType' => $g->media_type,
             'category' => $g->category,
             'orderIndex' => $g->order_index ?? 0,
@@ -221,7 +241,7 @@ class PublicMapper
         return [
             '_id' => (string) $s->id,
             'candidateName' => $s->candidate_name,
-            'photoUrl' => $s->photo_url,
+            'photoUrl' => self::resolveUrl($s->photo_url),
             'countryDeployed' => $s->country_deployed,
             'jobTitle_en' => $s->job_title_en,
             'jobTitle_ne' => $s->job_title_ne,
@@ -238,7 +258,7 @@ class PublicMapper
         return [
             '_id' => (string) $t->id,
             'candidateName' => $t->candidate_name,
-            'photoUrl' => $t->photo_url,
+            'photoUrl' => self::resolveUrl($t->photo_url),
             'countryDeployed' => $t->country_deployed,
             'review_en' => $t->review_en,
             'review_ne' => $t->review_ne,
@@ -257,9 +277,9 @@ class PublicMapper
             'title_ne' => $n->title_ne ?? '',
             'description_en' => $n->description_en ?? '',
             'description_ne' => $n->description_ne ?? '',
-            'imageUrl' => $n->image_url ?? '',
-            'pdfUrl' => $n->pdf_url ?? $n->attachment_url ?? '',
-            'attachmentUrl' => $n->attachment_url ?? '',
+            'imageUrl' => self::resolveUrl($n->image_url ?? ''),
+            'pdfUrl' => self::resolveUrl($n->pdf_url ?? $n->attachment_url ?? ''),
+            'attachmentUrl' => self::resolveUrl($n->attachment_url ?? ''),
             'publishDate' => $n->publish_date,
             'isPopup' => $n->is_popup === true,
             'targetPages' => is_array($n->target_pages) ? $n->target_pages : [],
@@ -310,7 +330,7 @@ class PublicMapper
                 'title_ne' => $p->seo_title_ne ?? '',
                 'description_en' => $p->seo_description_en ?? '',
                 'description_ne' => $p->seo_description_ne ?? '',
-                'og_image' => $p->og_image ?? '',
+                'og_image' => self::resolveUrl($p->og_image ?? ''),
                 'keywords' => is_array($p->keywords ?? null) ? $p->keywords : [],
             ],
         ];
@@ -323,8 +343,8 @@ class PublicMapper
             'mode' => $t->mode ?? 'light',
             'primary_color' => $t->primary_color ?? '',
             'secondary_color' => $t->secondary_color ?? '',
-            'logo_url' => $t->logo_url ?? '',
-            'favicon_url' => $t->favicon_url ?? '',
+            'logo_url' => self::resolveUrl($t->logo_url ?? ''),
+            'favicon_url' => self::resolveUrl($t->favicon_url ?? ''),
             'isDefault' => $t->is_default === true,
         ];
     }
