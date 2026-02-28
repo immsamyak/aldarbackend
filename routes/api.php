@@ -130,13 +130,13 @@ Route::post('/jobs/{jobId}/apply', function (Request $request, string $jobId) {
     if ($request->hasFile('cv')) {
         $cv = $request->file('cv');
         $cvName = time() . '_cv_' . $cv->getClientOriginalName();
-        $cv->move(public_path('uploads/applications'), $cvName);
+        $cv->storeAs('uploads/applications', $cvName, 'public');
         $data['cv_url'] = 'uploads/applications/' . $cvName;
     }
     if ($request->hasFile('passport')) {
         $passport = $request->file('passport');
         $passName = time() . '_passport_' . $passport->getClientOriginalName();
-        $passport->move(public_path('uploads/applications'), $passName);
+        $passport->storeAs('uploads/applications', $passName, 'public');
         $data['passport_url'] = 'uploads/applications/' . $passName;
     }
 

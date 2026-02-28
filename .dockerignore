@@ -31,6 +31,7 @@ storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*
 storage/framework/views/*
+public/uploads
 
 update_recruitment.sql
 # Cache-optimized deploy 1771941910
